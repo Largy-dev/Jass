@@ -8,6 +8,9 @@ on:
       - claude/jass-scoring-app-nFcgU
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Debug APK
