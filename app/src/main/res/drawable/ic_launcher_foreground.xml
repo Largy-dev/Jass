@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Card shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,20 Q20,20 20,30 L20,78 Q20,88 30,88 L78,88 Q88,88 88,78 L88,30 Q88,20 78,20 Z" />
+    <!-- Heart suit symbol -->
+    <path
+        android:fillColor="#C62828"
+        android:pathData="M54,72 L28,50 Q22,42 28,36 Q34,30 40,34 L54,46 L68,34 Q74,30 80,36 Q86,42 80,50 Z" />
+    <!-- J letter -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M46,28 L62,28 L62,32 L56,32 L56,56 Q56,62 50,64 Q44,66 40,62 L42,58 Q44,60 47,59 Q50,58 50,56 L50,32 L46,32 Z" />
+</vector>
