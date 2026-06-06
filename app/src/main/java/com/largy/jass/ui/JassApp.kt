@@ -1,5 +1,6 @@
 package com.largy.jass.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -21,6 +22,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -119,7 +121,7 @@ fun JassApp(vm: GameViewModel = viewModel()) {
             name1 = vm.team1Name,
             name2 = vm.team2Name,
             onDismiss = { showDialog = false },
-            onConfirm = { s -> vm.addRound(s); showDialog = false }
+            onConfirm = { s, mult -> vm.addRound(s, mult); showDialog = false }
         )
     }
 }
@@ -295,20 +297,25 @@ private fun RoundDialog(
     name1: String,
     name2: String,
     onDismiss: () -> Unit,
-    onConfirm: (Int) -> Unit
+    onConfirm: (score1: Int, multiplier: Int) -> Unit
 ) {
-    var input by remember { mutableStateOf("") }
-    val s1 = input.toIntOrNull()?.takeIf { it >= 0 }
-    val s2 = s1?.let { maxOf(0, 157 - it) }
+    var input   by remember { mutableStateOf("") }
+    var doubled by remember { mutableStateOf(false) }
+    val mult   = if (doubled) 2 else 1
+    val s1raw  = input.toIntOrNull()?.takeIf { it >= 0 }
+    val s2raw  = s1raw?.let { maxOf(0, 157 - it) }
+    val s1eff  = s1raw?.let { it * mult }
+    val s2eff  = s2raw?.let { it * mult }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor   = Color(0xFF252515),
+        onDismissRequest  = onDismiss,
+        containerColor    = Color(0xFF252515),
         titleContentColor = CHALK,
         textContentColor  = CHALK,
         title = { Text("Manche", fontFamily = FontFamily.Monospace) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
                 OutlinedTextField(
                     value = input,
                     onValueChange = { if (it.length <= 3) input = it },
@@ -326,13 +333,49 @@ private fun RoundDialog(
                         cursorColor          = ORANGE
                     )
                 )
-                if (s2 != null) {
-                    Text("$name2 : $s2", color = CHALK.copy(alpha = 0.7f), fontFamily = FontFamily.Monospace, fontSize = 15.sp)
+
+                // ── Bouton Pique double ×2 ────────────────────────────────
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Pique double",
+                        color = CHALK.copy(alpha = 0.6f),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 13.sp
+                    )
+                    Spacer(Modifier.weight(1f))
+                    OutlinedButton(
+                        onClick = { doubled = !doubled },
+                        border = BorderStroke(1.5.dp, ORANGE),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (doubled) ORANGE else Color.Transparent,
+                            contentColor   = if (doubled) CHALK  else ORANGE
+                        )
+                    ) {
+                        Text("×2", fontFamily = FontFamily.Monospace, fontSize = 15.sp)
+                    }
+                }
+
+                // ── Scores effectifs ──────────────────────────────────────
+                if (s1eff != null && s2eff != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            "$name1 : $s1eff",
+                            color = if (doubled) ORANGE else CHALK.copy(alpha = 0.7f),
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 15.sp
+                        )
+                        Text(
+                            "$name2 : $s2eff",
+                            color = CHALK.copy(alpha = 0.7f),
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 15.sp
+                        )
+                    }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { s1?.let { onConfirm(it) } }, enabled = s1 != null) {
+            TextButton(onClick = { s1raw?.let { onConfirm(it, mult) } }, enabled = s1raw != null) {
                 Text("OK", color = ORANGE, fontFamily = FontFamily.Monospace)
             }
         },
