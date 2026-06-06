@@ -5,75 +5,75 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 
-data class Round(
-    val id: Long = System.currentTimeMillis(),
-    val team1Tricks: Int,
-    val team2Tricks: Int,
-    val team1Wys: Int,
-    val team2Wys: Int,
-    val team1Stock: Boolean,
-    val team2Stock: Boolean,
-    val allTricks: Int = 0
+data class TeamScore(
+    val m100: Int = 0,
+    val m50: Int = 0,
+    val m20: Int = 0,
+    val wys: Int = 0
 ) {
-    // allTricks: 0=personne, 1=équipe1, 2=équipe2 remporte toutes les levées (+100)
-    val team1Total: Int
-        get() = team1Tricks + team1Wys +
-                (if (team1Stock) 20 else 0) +
-                (if (allTricks == 1) 100 else 0)
-
-    val team2Total: Int
-        get() = team2Tricks + team2Wys +
-                (if (team2Stock) 20 else 0) +
-                (if (allTricks == 2) 100 else 0)
-}
-
-data class GameState(
-    val team1Name: String = "Nous",
-    val team2Name: String = "Eux",
-    val rounds: List<Round> = emptyList(),
-    val targetScore: Int = 1000
-) {
-    val team1Score: Int get() = rounds.sumOf { it.team1Total }
-    val team2Score: Int get() = rounds.sumOf { it.team2Total }
-
-    val winner: String?
-        get() = when {
-            team1Score >= targetScore -> team1Name
-            team2Score >= targetScore -> team2Name
-            else -> null
-        }
-
-    val progress1: Float
-        get() = (team1Score.toFloat() / targetScore.toFloat()).coerceIn(0f, 1f)
-
-    val progress2: Float
-        get() = (team2Score.toFloat() / targetScore.toFloat()).coerceIn(0f, 1f)
+    val total get() = m100 * 100 + m50 * 50 + m20 * 20 + wys
 }
 
 class GameViewModel : ViewModel() {
-    var state by mutableStateOf(GameState())
-        private set
+    var team1 by mutableStateOf(TeamScore()); private set
+    var team2 by mutableStateOf(TeamScore()); private set
+    var team1Name by mutableStateOf("Nous"); private set
+    var team2Name by mutableStateOf("Eux"); private set
 
-    fun addRound(round: Round) {
-        state = state.copy(rounds = state.rounds + round)
+    fun mark(team: Int, zone: Int) {
+        if (team == 1) team1 = when (zone) {
+            1 -> team1.copy(m100 = team1.m100 + 1)
+            2 -> team1.copy(m50 = team1.m50 + 1)
+            else -> team1.copy(m20 = team1.m20 + 1)
+        }
+        else team2 = when (zone) {
+            1 -> team2.copy(m100 = team2.m100 + 1)
+            2 -> team2.copy(m50 = team2.m50 + 1)
+            else -> team2.copy(m20 = team2.m20 + 1)
+        }
     }
 
-    fun deleteRound(roundId: Long) {
-        state = state.copy(rounds = state.rounds.filter { it.id != roundId })
+    fun unmark(team: Int, zone: Int) {
+        if (team == 1) team1 = when (zone) {
+            1 -> team1.copy(m100 = maxOf(0, team1.m100 - 1))
+            2 -> team1.copy(m50 = maxOf(0, team1.m50 - 1))
+            else -> team1.copy(m20 = maxOf(0, team1.m20 - 1))
+        }
+        else team2 = when (zone) {
+            1 -> team2.copy(m100 = maxOf(0, team2.m100 - 1))
+            2 -> team2.copy(m50 = maxOf(0, team2.m50 - 1))
+            else -> team2.copy(m20 = maxOf(0, team2.m20 - 1))
+        }
     }
 
-    fun newGame() {
-        state = state.copy(rounds = emptyList())
+    fun addRound(score1: Int) {
+        addAsMarks(1, score1.coerceIn(0, 300))
+        addAsMarks(2, maxOf(0, 157 - score1))
     }
 
-    fun updateTeamNames(team1: String, team2: String) {
-        state = state.copy(
-            team1Name = team1.ifBlank { "Nous" },
-            team2Name = team2.ifBlank { "Eux" }
-        )
+    private fun addAsMarks(team: Int, score: Int) {
+        var rem = score
+        val n100 = rem / 100; rem %= 100
+        val n50 = rem / 50; rem %= 50
+        val n20 = rem / 20; rem %= 20
+        repeat(n100) { mark(team, 1) }
+        repeat(n50) { mark(team, 2) }
+        repeat(n20) { mark(team, 3) }
+        if (rem > 0) setWys(team, (if (team == 1) team1.wys else team2.wys) + rem)
     }
 
-    fun updateTargetScore(target: Int) {
-        state = state.copy(targetScore = target.coerceAtLeast(100))
+    fun setWys(team: Int, v: Int) {
+        if (team == 1) team1 = team1.copy(wys = v.coerceAtLeast(0))
+        else team2 = team2.copy(wys = v.coerceAtLeast(0))
+    }
+
+    fun setNames(n1: String, n2: String) {
+        team1Name = n1.ifBlank { "Nous" }
+        team2Name = n2.ifBlank { "Eux" }
+    }
+
+    fun reset() {
+        team1 = TeamScore()
+        team2 = TeamScore()
     }
 }
