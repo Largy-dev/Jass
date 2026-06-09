@@ -46,11 +46,9 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun addRound(score1: Int, multiplier: Int = 1) {
-        val raw1 = score1.coerceIn(0, 600)
-        val raw2 = maxOf(0, 157 - score1)
-        addAsMarks(1, raw1 * multiplier)
-        addAsMarks(2, raw2 * multiplier)
+    fun addRound(score1: Int, score2: Int = maxOf(0, 157 - score1), multiplier: Int = 1) {
+        addAsMarks(1, score1.coerceIn(0, 600) * multiplier)
+        addAsMarks(2, score2.coerceIn(0, 600) * multiplier)
     }
 
     private fun addAsMarks(team: Int, score: Int) {
