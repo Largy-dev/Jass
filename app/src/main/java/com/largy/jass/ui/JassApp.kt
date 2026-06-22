@@ -206,7 +206,7 @@ private fun ZBoard(
         ZLine(rightward = false)
         MarkZone(score.m20,  "20",  { onMark(3) }, { onUnmark(3) }, Modifier.weight(1f).fillMaxWidth())
         HorizontalDivider(color = ORANGE.copy(alpha = 0.2f), thickness = 0.5.dp)
-        WysRow(score.wys, onWys)
+        BottomRow(wys = score.wys, retenue = score.retenue, onWys = onWys)
     }
 }
 
@@ -269,25 +269,38 @@ private fun DrawScope.drawTally(count: Int, color: Color) {
     }
 }
 
-// ── Champ Wys ────────────────────────────────────────────────────────────────
+// ── Barre Wys + retenue ───────────────────────────────────────────────────────
 
 @Composable
-private fun WysRow(value: Int, onChange: (Int) -> Unit) {
-    var text by remember(value) { mutableStateOf(if (value == 0) "" else "$value") }
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("Wys",  color = CHALK.copy(alpha = 0.35f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-        Text(" : ",  color = ORANGE.copy(alpha = 0.5f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-        BasicTextField(
-            value         = text,
-            onValueChange = { s -> if (s.length <= 4) { text = s; onChange(s.toIntOrNull() ?: 0) } },
-            textStyle       = TextStyle(color = CHALK, fontFamily = FontFamily.Monospace, fontSize = 13.sp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            cursorBrush     = SolidColor(ORANGE),
-            modifier        = Modifier.weight(1f)
-        )
+private fun BottomRow(wys: Int, retenue: Int, onWys: (Int) -> Unit) {
+    var text by remember(wys) { mutableStateOf(if (wys == 0) "" else "$wys") }
+    Column(Modifier.fillMaxWidth()) {
+        // Retenue : affichée uniquement si > 0
+        if (retenue > 0) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("↩", color = ORANGE.copy(alpha = 0.7f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+                Text(" ret : ", color = CHALK.copy(alpha = 0.35f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+                Text("$retenue", color = ORANGE, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Wys",  color = CHALK.copy(alpha = 0.35f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+            Text(" : ",  color = ORANGE.copy(alpha = 0.5f),  fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+            BasicTextField(
+                value         = text,
+                onValueChange = { s -> if (s.length <= 4) { text = s; onWys(s.toIntOrNull() ?: 0) } },
+                textStyle       = TextStyle(color = CHALK, fontFamily = FontFamily.Monospace, fontSize = 13.sp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                cursorBrush     = SolidColor(ORANGE),
+                modifier        = Modifier.weight(1f)
+            )
+        }
     }
 }
 
