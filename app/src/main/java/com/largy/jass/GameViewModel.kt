@@ -31,8 +31,10 @@ class GameViewModel : ViewModel() {
 
     fun unmark(team: Int, zone: Int) {
         val count = when (zone) { 1 -> score(team).m100; 2 -> score(team).m50; else -> score(team).m20 }
-        if (count > 0) log(HistoryEntry("${teamName(team)} : -${zoneVal(zone)}"))
-        markSilent(team, zone)
+        if (count > 0) {
+            log(HistoryEntry("${teamName(team)} : -${zoneVal(zone)}"))
+            unmarkSilent(team, zone)
+        }
     }
 
     // ── Manche (via dialogue) ─────────────────────────────────────────
@@ -68,6 +70,19 @@ class GameViewModel : ViewModel() {
             1    -> team2.copy(m100 = team2.m100 + 1)
             2    -> team2.copy(m50  = team2.m50  + 1)
             else -> team2.copy(m20  = team2.m20  + 1)
+        }
+    }
+
+    private fun unmarkSilent(team: Int, zone: Int) {
+        if (team == 1) team1 = when (zone) {
+            1    -> team1.copy(m100 = maxOf(0, team1.m100 - 1))
+            2    -> team1.copy(m50  = maxOf(0, team1.m50  - 1))
+            else -> team1.copy(m20  = maxOf(0, team1.m20  - 1))
+        }
+        else team2 = when (zone) {
+            1    -> team2.copy(m100 = maxOf(0, team2.m100 - 1))
+            2    -> team2.copy(m50  = maxOf(0, team2.m50  - 1))
+            else -> team2.copy(m20  = maxOf(0, team2.m20  - 1))
         }
     }
 
