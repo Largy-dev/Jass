@@ -17,14 +17,16 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,7 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.TextStyle
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.largy.jass.GameViewModel
+import com.largy.jass.HistoryEntry
 import com.largy.jass.TeamScore
 
 private val BG      = Color(0xFF1A1A14)
@@ -65,6 +67,7 @@ private val CHALK   = Color(0xFFF0EDD5)
 @Composable
 fun JassApp(vm: GameViewModel = viewModel()) {
     var showRound   by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
     var editingTeam by remember { mutableStateOf(0) }
 
     Box(Modifier.fillMaxSize().background(BG)) {
@@ -76,8 +79,11 @@ fun JassApp(vm: GameViewModel = viewModel()) {
                     .fillMaxWidth()
                     .background(SURFACE)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .padding(horizontal = 4.dp, vertical = 6.dp)
             ) {
+                TextButton(onClick = { vm.reset() }, modifier = Modifier.align(Alignment.CenterStart)) {
+                    Text("✕", color = CHALK.copy(alpha = 0.25f), fontSize = 16.sp)
+                }
                 Text(
                     "JASS",
                     color      = ORANGE,
@@ -86,19 +92,14 @@ fun JassApp(vm: GameViewModel = viewModel()) {
                     fontSize   = 18.sp,
                     modifier   = Modifier.align(Alignment.Center)
                 )
-                TextButton(
-                    onClick  = { vm.reset() },
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
-                    Text("✕", color = CHALK.copy(alpha = 0.25f), fontSize = 16.sp)
+                TextButton(onClick = { showHistory = true }, modifier = Modifier.align(Alignment.CenterEnd)) {
+                    Text("≡", color = CHALK.copy(alpha = 0.45f), fontSize = 22.sp)
                 }
             }
 
             // ── Score header (tap nom pour renommer) ──────────────────
             Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 TeamHeader(vm.team1Name, vm.team1.total, onTap = { editingTeam = 1 })
@@ -107,13 +108,12 @@ fun JassApp(vm: GameViewModel = viewModel()) {
 
             HorizontalDivider(color = ORANGE.copy(alpha = 0.5f), thickness = 1.dp)
 
-            // ── Boards côte à côte ────────────────────────────────────
+            // ── Boards ────────────────────────────────────────────────
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 ZBoard(
                     score    = vm.team1,
                     onMark   = { vm.mark(1, it)   },
                     onUnmark = { vm.unmark(1, it) },
-                    onWys    = { vm.setWys(1, it) },
                     modifier = Modifier.weight(1f).fillMaxHeight()
                 )
                 Box(Modifier.width(1.5.dp).fillMaxHeight().background(ORANGE.copy(alpha = 0.5f)))
@@ -121,7 +121,6 @@ fun JassApp(vm: GameViewModel = viewModel()) {
                     score    = vm.team2,
                     onMark   = { vm.mark(2, it)   },
                     onUnmark = { vm.unmark(2, it) },
-                    onWys    = { vm.setWys(2, it) },
                     modifier = Modifier.weight(1f).fillMaxHeight()
                 )
             }
@@ -157,6 +156,10 @@ fun JassApp(vm: GameViewModel = viewModel()) {
         )
     }
 
+    if (showHistory) {
+        HistoryDialog(history = vm.history, onDismiss = { showHistory = false })
+    }
+
     if (editingTeam > 0) {
         RenameDialog(
             current   = if (editingTeam == 1) vm.team1Name else vm.team2Name,
@@ -170,25 +173,22 @@ fun JassApp(vm: GameViewModel = viewModel()) {
     }
 }
 
-// ── En-tête équipe (cliquable pour renommer) ─────────────────────────────────
+// ── En-tête équipe ────────────────────────────────────────────────────────────
 
 @Composable
 private fun TeamHeader(
-    name:       String,
-    total:      Int,
-    onTap:      () -> Unit,
-    rightAlign: Boolean = false
+    name: String, total: Int, onTap: () -> Unit, rightAlign: Boolean = false
 ) {
     Column(
         horizontalAlignment = if (rightAlign) Alignment.End else Alignment.Start,
         modifier = Modifier.clickable(onClick = onTap)
     ) {
-        Text(name,   color = CHALK.copy(alpha = 0.45f), fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+        Text(name,    color = CHALK.copy(alpha = 0.45f), fontFamily = FontFamily.Monospace, fontSize = 12.sp)
         Text("$total", color = CHALK, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 44.sp)
     }
 }
 
-// ── Tableau Z pour une équipe ────────────────────────────────────────────────
+// ── Tableau Z ────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -196,7 +196,6 @@ private fun ZBoard(
     score:    TeamScore,
     onMark:   (zone: Int) -> Unit,
     onUnmark: (zone: Int) -> Unit,
-    onWys:    (Int) -> Unit,
     modifier: Modifier
 ) {
     Column(modifier) {
@@ -206,7 +205,7 @@ private fun ZBoard(
         ZLine(rightward = false)
         MarkZone(score.m20,  "20",  { onMark(3) }, { onUnmark(3) }, Modifier.weight(1f).fillMaxWidth())
         HorizontalDivider(color = ORANGE.copy(alpha = 0.2f), thickness = 0.5.dp)
-        BottomRow(wys = score.wys, retenue = score.retenue, onWys = onWys)
+        RetenueRow(score.retenue)
     }
 }
 
@@ -216,24 +215,20 @@ private fun ZBoard(
 private fun ZLine(rightward: Boolean) {
     Canvas(Modifier.fillMaxWidth().height(24.dp)) {
         val sw = 1.5.dp.toPx()
-        val (a, b) = if (rightward)
-            Offset(0f, 0f) to Offset(size.width, size.height)
-        else
-            Offset(size.width, 0f) to Offset(0f, size.height)
+        val (a, b) = if (rightward) Offset(0f, 0f) to Offset(size.width, size.height)
+                     else           Offset(size.width, 0f) to Offset(0f, size.height)
         drawLine(ORANGE, a, b, sw, cap = StrokeCap.Round)
     }
 }
 
-// ── Zone cliquable avec barres de tally ──────────────────────────────────────
+// ── Zone cliquable avec barres ────────────────────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MarkZone(
-    count:     Int,
-    label:     String,
-    onTap:     () -> Unit,
-    onLongTap: () -> Unit,
-    modifier:  Modifier
+    count: Int, label: String,
+    onTap: () -> Unit, onLongTap: () -> Unit,
+    modifier: Modifier
 ) {
     Box(modifier.combinedClickable(onClick = onTap, onLongClick = onLongTap).padding(horizontal = 4.dp)) {
         Text(label, color = CHALK.copy(alpha = 0.06f), fontFamily = FontFamily.Monospace, fontSize = 38.sp, modifier = Modifier.align(Alignment.Center))
@@ -245,21 +240,13 @@ private fun MarkZone(
 
 private fun DrawScope.drawTally(count: Int, color: Color) {
     if (count == 0) return
-
     val mh = minOf(size.height * 0.52f, 28.dp.toPx())
-    val sw = 2.5f.dp.toPx()
-    val sp = 8.dp.toPx()
-    val gw = 4 * sp
-    val gg = 14.dp.toPx()
-    val cy = size.height / 2f
-    val ox = 6.dp.toPx()
-
+    val sw = 2.5f.dp.toPx(); val sp = 8.dp.toPx()
+    val gw = 4 * sp;          val gg = 14.dp.toPx()
+    val cy = size.height / 2f; val ox = 6.dp.toPx()
     for (i in 0 until count) {
-        val g  = i / 5
-        val p  = i % 5
-        val gx = ox + g * (gw + gg)
+        val g = i / 5; val p = i % 5; val gx = ox + g * (gw + gg)
         if (gx > size.width - 4.dp.toPx()) break
-
         if (p < 4) {
             val x = gx + p * sp
             drawLine(color, Offset(x, cy - mh / 2), Offset(x, cy + mh / 2), sw, cap = StrokeCap.Round)
@@ -269,49 +256,78 @@ private fun DrawScope.drawTally(count: Int, color: Color) {
     }
 }
 
-// ── Barre Wys + retenue ───────────────────────────────────────────────────────
+// ── Retenue ───────────────────────────────────────────────────────────────────
 
 @Composable
-private fun BottomRow(wys: Int, retenue: Int, onWys: (Int) -> Unit) {
-    var text by remember(wys) { mutableStateOf(if (wys == 0) "" else "$wys") }
-    Column(Modifier.fillMaxWidth()) {
-        // Retenue : affichée uniquement si > 0
-        if (retenue > 0) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("↩", color = ORANGE.copy(alpha = 0.7f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-                Text(" ret : ", color = CHALK.copy(alpha = 0.35f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-                Text("$retenue", color = ORANGE, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 11.sp)
-            }
-        }
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Wys",  color = CHALK.copy(alpha = 0.35f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-            Text(" : ",  color = ORANGE.copy(alpha = 0.5f),  fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-            BasicTextField(
-                value         = text,
-                onValueChange = { s -> if (s.length <= 4) { text = s; onWys(s.toIntOrNull() ?: 0) } },
-                textStyle       = TextStyle(color = CHALK, fontFamily = FontFamily.Monospace, fontSize = 13.sp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                cursorBrush     = SolidColor(ORANGE),
-                modifier        = Modifier.weight(1f)
-            )
-        }
+private fun RetenueRow(retenue: Int) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("ret : ", color = CHALK.copy(alpha = 0.3f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+        Text(
+            if (retenue > 0) "$retenue" else "—",
+            color      = if (retenue > 0) ORANGE else CHALK.copy(alpha = 0.18f),
+            fontFamily = FontFamily.Monospace,
+            fontWeight = if (retenue > 0) FontWeight.Bold else FontWeight.Normal,
+            fontSize   = 11.sp
+        )
     }
 }
 
-// ── Dialogue renommer équipe ──────────────────────────────────────────────────
+// ── Historique ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun RenameDialog(
-    current:   String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
+private fun HistoryDialog(history: List<HistoryEntry>, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest  = onDismiss,
+        containerColor    = Color(0xFF1E1E18),
+        titleContentColor = CHALK,
+        textContentColor  = CHALK,
+        title = {
+            Text("Historique", fontFamily = FontFamily.Monospace, color = ORANGE, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            if (history.isEmpty()) {
+                Text("Aucune entrée.", color = CHALK.copy(alpha = 0.35f), fontFamily = FontFamily.Monospace, fontSize = 13.sp)
+            } else {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    history.forEach { entry ->
+                        if (entry.isRound) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .background(ORANGE.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                            ) {
+                                Text(entry.text, color = ORANGE, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        } else {
+                            Text(entry.text, color = CHALK.copy(alpha = 0.6f), fontFamily = FontFamily.Monospace, fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp))
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Fermer", color = ORANGE, fontFamily = FontFamily.Monospace)
+            }
+        }
+    )
+}
+
+// ── Dialogue renommer ─────────────────────────────────────────────────────────
+
+@Composable
+private fun RenameDialog(current: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var text by remember { mutableStateOf(current) }
     AlertDialog(
         onDismissRequest  = onDismiss,
@@ -321,16 +337,12 @@ private fun RenameDialog(
         title = { Text("Équipe", fontFamily = FontFamily.Monospace, fontSize = 16.sp) },
         text  = {
             OutlinedTextField(
-                value         = text,
-                onValueChange = { if (it.length <= 12) text = it },
-                singleLine    = true,
-                textStyle     = TextStyle(fontFamily = FontFamily.Monospace, color = CHALK),
-                colors        = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = ORANGE,
-                    unfocusedBorderColor = CHALK.copy(alpha = 0.3f),
-                    cursorColor          = ORANGE,
-                    focusedTextColor     = CHALK,
-                    unfocusedTextColor   = CHALK
+                value = text, onValueChange = { if (it.length <= 12) text = it },
+                singleLine = true,
+                textStyle  = TextStyle(fontFamily = FontFamily.Monospace, color = CHALK),
+                colors     = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = ORANGE, unfocusedBorderColor = CHALK.copy(alpha = 0.3f),
+                    cursorColor = ORANGE, focusedTextColor = CHALK, unfocusedTextColor = CHALK
                 )
             )
         },
@@ -340,33 +352,28 @@ private fun RenameDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annuler", color = CHALK.copy(alpha = 0.4f), fontFamily = FontFamily.Monospace)
-            }
+            TextButton(onClick = onDismiss) { Text("Annuler", color = CHALK.copy(alpha = 0.4f), fontFamily = FontFamily.Monospace) }
         }
     )
 }
 
-// ── Dialogue saisie de manche ─────────────────────────────────────────────────
+// ── Dialogue manche ───────────────────────────────────────────────────────────
 
 @Composable
 private fun RoundDialog(
-    name1:     String,
-    name2:     String,
+    name1: String, name2: String,
     onDismiss: () -> Unit,
     onConfirm: (score1: Int, score2: Int, multiplier: Int) -> Unit
 ) {
     var input        by remember { mutableStateOf("") }
     var doubled      by remember { mutableStateOf(false) }
     var countingTeam by remember { mutableStateOf(1) }
-    val mult         = if (doubled) 2 else 1
-    val rawInput     = input.toIntOrNull()?.takeIf { it >= 0 }
-
-    // L'équipe qui compte entre son propre score ; l'autre reçoit maxOf(0, 157 − ce score)
-    val s1raw = rawInput?.let { if (countingTeam == 1) it                else maxOf(0, 157 - it) }
-    val s2raw = rawInput?.let { if (countingTeam == 1) maxOf(0, 157 - it) else it                }
-    val s1eff = s1raw?.let { it * mult }
-    val s2eff = s2raw?.let { it * mult }
+    val mult     = if (doubled) 2 else 1
+    val rawInput = input.toIntOrNull()?.takeIf { it >= 0 }
+    val s1raw    = rawInput?.let { if (countingTeam == 1) it               else maxOf(0, 157 - it) }
+    val s2raw    = rawInput?.let { if (countingTeam == 1) maxOf(0, 157 - it) else it               }
+    val s1eff    = s1raw?.let { it * mult }
+    val s2eff    = s2raw?.let { it * mult }
 
     AlertDialog(
         onDismissRequest  = onDismiss,
@@ -376,37 +383,26 @@ private fun RoundDialog(
         title = { Text("Manche", fontFamily = FontFamily.Monospace) },
         text  = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
-                // ── Qui compte ? ──────────────────────────────────────
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Qui compte ?", color = CHALK.copy(alpha = 0.4f), fontFamily = FontFamily.Monospace, fontSize = 11.sp)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TeamChip(name1, selected = countingTeam == 1, onClick = { countingTeam = 1; input = "" }, modifier = Modifier.weight(1f))
-                        TeamChip(name2, selected = countingTeam == 2, onClick = { countingTeam = 2; input = "" }, modifier = Modifier.weight(1f))
+                        TeamChip(name1, countingTeam == 1, { countingTeam = 1; input = "" }, Modifier.weight(1f))
+                        TeamChip(name2, countingTeam == 2, { countingTeam = 2; input = "" }, Modifier.weight(1f))
                     }
                 }
-
-                // ── Score de l'équipe qui compte ──────────────────────
                 OutlinedTextField(
-                    value         = input,
-                    onValueChange = { if (it.length <= 3) input = it },
-                    label         = { Text(if (countingTeam == 1) name1 else name2, fontFamily = FontFamily.Monospace) },
-                    singleLine    = true,
+                    value = input, onValueChange = { if (it.length <= 3) input = it },
+                    label = { Text(if (countingTeam == 1) name1 else name2, fontFamily = FontFamily.Monospace) },
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    textStyle     = TextStyle(fontFamily = FontFamily.Monospace, color = CHALK),
-                    colors        = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor   = ORANGE,
-                        unfocusedBorderColor = CHALK.copy(alpha = 0.3f),
-                        focusedLabelColor    = ORANGE,
-                        unfocusedLabelColor  = CHALK.copy(alpha = 0.45f),
-                        focusedTextColor     = CHALK,
-                        unfocusedTextColor   = CHALK,
-                        cursorColor          = ORANGE
+                    textStyle = TextStyle(fontFamily = FontFamily.Monospace, color = CHALK),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ORANGE, unfocusedBorderColor = CHALK.copy(alpha = 0.3f),
+                        focusedLabelColor = ORANGE, unfocusedLabelColor = CHALK.copy(alpha = 0.45f),
+                        focusedTextColor = CHALK, unfocusedTextColor = CHALK, cursorColor = ORANGE
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
-
-                // ── Pique double ×2 ───────────────────────────────────
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Pique double", color = CHALK.copy(alpha = 0.6f), fontFamily = FontFamily.Monospace, fontSize = 13.sp)
                     Spacer(Modifier.weight(1f))
@@ -417,33 +413,25 @@ private fun RoundDialog(
                             containerColor = if (doubled) ORANGE else Color.Transparent,
                             contentColor   = if (doubled) CHALK  else ORANGE
                         )
-                    ) {
-                        Text("×2", fontFamily = FontFamily.Monospace, fontSize = 15.sp)
-                    }
+                    ) { Text("×2", fontFamily = FontFamily.Monospace, fontSize = 15.sp) }
                 }
-
-                // ── Aperçu scores ─────────────────────────────────────
                 if (s1eff != null && s2eff != null) {
-                    val previewColor = if (doubled) ORANGE else CHALK.copy(alpha = 0.7f)
+                    val col = if (doubled) ORANGE else CHALK.copy(alpha = 0.7f)
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("$name1 : $s1eff", color = previewColor, fontFamily = FontFamily.Monospace, fontSize = 15.sp)
-                        Text("$name2 : $s2eff", color = previewColor, fontFamily = FontFamily.Monospace, fontSize = 15.sp)
+                        Text("$name1 : $s1eff", color = col, fontFamily = FontFamily.Monospace, fontSize = 15.sp)
+                        Text("$name2 : $s2eff", color = col, fontFamily = FontFamily.Monospace, fontSize = 15.sp)
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(
-                onClick  = { if (s1raw != null && s2raw != null) onConfirm(s1raw, s2raw, mult) },
-                enabled  = s1raw != null && s2raw != null
-            ) {
-                Text("OK", color = ORANGE, fontFamily = FontFamily.Monospace)
-            }
+                onClick = { if (s1raw != null && s2raw != null) onConfirm(s1raw, s2raw, mult) },
+                enabled = s1raw != null && s2raw != null
+            ) { Text("OK", color = ORANGE, fontFamily = FontFamily.Monospace) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annuler", color = CHALK.copy(alpha = 0.4f), fontFamily = FontFamily.Monospace)
-            }
+            TextButton(onClick = onDismiss) { Text("Annuler", color = CHALK.copy(alpha = 0.4f), fontFamily = FontFamily.Monospace) }
         }
     )
 }
@@ -451,16 +439,11 @@ private fun RoundDialog(
 // ── Chip sélection équipe ─────────────────────────────────────────────────────
 
 @Composable
-private fun TeamChip(
-    name:     String,
-    selected: Boolean,
-    onClick:  () -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun TeamChip(name: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     OutlinedButton(
-        onClick = onClick,
-        border  = BorderStroke(1.5.dp, if (selected) ORANGE else CHALK.copy(alpha = 0.2f)),
-        colors  = ButtonDefaults.outlinedButtonColors(
+        onClick  = onClick,
+        border   = BorderStroke(1.5.dp, if (selected) ORANGE else CHALK.copy(alpha = 0.2f)),
+        colors   = ButtonDefaults.outlinedButtonColors(
             containerColor = if (selected) ORANGE.copy(alpha = 0.15f) else Color.Transparent,
             contentColor   = if (selected) ORANGE else CHALK.copy(alpha = 0.45f)
         ),
