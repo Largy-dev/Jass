@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.largy.jass"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.largy.jass"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 2
+        versionName = "2.0"
     }
 
     buildTypes {
@@ -27,12 +27,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -51,4 +51,5 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     debugImplementation(libs.androidx.ui.tooling)
+    testImplementation(libs.junit)
 }

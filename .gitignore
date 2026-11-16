@@ -8,3 +8,16 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Ruflo local secrets and runtime data
+.env
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+.agents/
+.claude/
+.claude-flow/
+.swarm/
+CLAUDE.md
