@@ -11,8 +11,11 @@ permissions:
 
 jobs:
   build:
-    name: Build Debug APK
+    name: Build signed release
     runs-on: ubuntu-latest
+    env:
+      # versionCode = numéro du run : toujours croissant, donc chaque APK met à jour le précédent
+      VERSION_CODE: ${{ github.run_number }}
 
     steps:
       - name: Checkout
@@ -37,19 +40,41 @@ jobs:
       - name: Unit tests
         run: ./gradlew testDebugUnitTest --no-daemon
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+      # Sans signature stable, chaque APK aurait une clé différente et Android
+      # refuserait la mise à jour : on échoue plutôt que de publier un APK inutilisable.
+      - name: Prepare signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.JASS_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.JASS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.JASS_KEY_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Secrets de signature manquants (JASS_KEYSTORE_BASE64, JASS_KEYSTORE_PASSWORD, JASS_KEY_ALIAS). Voir README, section Signature."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/jass-upload.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/jass-upload.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEYSTORE_PASSWORD"
+          } > "$RUNNER_TEMP/keystore.properties"
+          echo "JASS_SIGNING_PROPERTIES=$RUNNER_TEMP/keystore.properties" >> "$GITHUB_ENV"
 
-      - name: Rename APK
+      - name: Build release APK + AAB
+        run: ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - name: Collect outputs
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/debug/app-debug.apk release/Jass-Score.apk
+          cp app/build/outputs/apk/release/app-release.apk release/Jass-Score.apk
+          cp app/build/outputs/bundle/release/app-release.aab release/Jass-Score.aab
 
-      - name: Upload APK as artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Jass-Score-APK
-          path: release/Jass-Score.apk
+          name: Jass-Score-${{ github.run_number }}
+          path: release/
           retention-days: 30
 
       - name: Get current date
@@ -65,18 +90,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Create Release with APK
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest-build
-          name: "Jass Score — Build ${{ steps.date.outputs.date }}"
+          name: "Jass Score 2.0.${{ github.run_number }} — ${{ steps.date.outputs.date }}"
           body: |
-            ## Jass Score — APK Android
+            ## Jass Score 2.0.${{ github.run_number }}
 
-            Télécharge le fichier `Jass-Score.apk` ci-dessous et installe-le sur ton téléphone Android.
+            Télécharge `Jass-Score.apk` ci-dessous et ouvre-le sur ton téléphone Android.
+            Si une version 2.0.x signée est déjà installée, elle est **mise à jour** et ta partie est conservée.
 
-            > **Note :** Avant d'installer, active *"Sources inconnues"* dans les paramètres Android
-            > (Paramètres → Sécurité → Installer des applications inconnues).
+            > Première installation : autorise « Installer des applications inconnues » pour ton navigateur.
+
+            `Jass-Score.aab` est le bundle destiné au Google Play Store.
 
             ### Fonctionnalités
             - Ardoise en Z par équipe : tap = +1 barre, appui long = −1 barre
@@ -85,7 +112,9 @@ jobs:
             - Retenue cumulée entre manches
             - Objectif configurable (1500 par défaut) avec annonce du vainqueur
             - Historique, annulation de la dernière action, sauvegarde automatique
-          files: release/Jass-Score.apk
+          files: |
+            release/Jass-Score.apk
+            release/Jass-Score.aab
           draft: false
           prerelease: false
         env:

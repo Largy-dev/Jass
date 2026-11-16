@@ -1,8 +1,22 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Signature release : fichier keystore.properties HORS du dépôt.
+// Chemin : variable d'env JASS_SIGNING_PROPERTIES, sinon ~/.jass-signing/keystore.properties.
+// Absent → le build release est produit non signé (le debug reste utilisable).
+val signingProps: Properties? = (System.getenv("JASS_SIGNING_PROPERTIES")
+    ?: "${System.getProperty("user.home")}/.jass-signing/keystore.properties")
+    .let(::file)
+    .takeIf { it.isFile }
+    ?.let { f -> Properties().apply { f.inputStream().use(::load) } }
+
+// versionCode croissant à chaque build CI (numéro de run GitHub), sinon valeur locale.
+val ciVersionCode: Int? = System.getenv("VERSION_CODE")?.toIntOrNull()
 
 android {
     namespace = "com.largy.jass"
@@ -12,13 +26,26 @@ android {
         applicationId = "com.largy.jass"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = ciVersionCode ?: 2
+        versionName = "2.0.${ciVersionCode ?: 0}"
+    }
+
+    signingConfigs {
+        if (signingProps != null) {
+            create("release") {
+                storeFile = file(signingProps.getProperty("storeFile"))
+                storePassword = signingProps.getProperty("storePassword")
+                keyAlias = signingProps.getProperty("keyAlias")
+                keyPassword = signingProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
