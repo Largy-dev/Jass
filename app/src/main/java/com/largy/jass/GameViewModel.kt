@@ -1,109 +1,105 @@
 package com.largy.jass
 
+import android.app.Application
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import com.largy.jass.game.EventCodec
+import com.largy.jass.game.GameEvent
+import com.largy.jass.game.Rules
+import com.largy.jass.game.Scores
+import com.largy.jass.game.Team
+import com.largy.jass.game.Zone
 
-data class HistoryEntry(val text: String, val isRound: Boolean = false)
+class GameViewModel(app: Application) : AndroidViewModel(app) {
 
-data class TeamScore(
-    val m100:    Int = 0,
-    val m50:     Int = 0,
-    val m20:     Int = 0,
-    val retenue: Int = 0
-) {
-    val total get() = m100 * 100 + m50 * 50 + m20 * 20 + retenue
-}
+    private val prefs = app.getSharedPreferences("jass_game", Context.MODE_PRIVATE)
 
-class GameViewModel : ViewModel() {
-    var team1     by mutableStateOf(TeamScore());             private set
-    var team2     by mutableStateOf(TeamScore());             private set
-    var team1Name by mutableStateOf("Nous");                  private set
-    var team2Name by mutableStateOf("Eux");                   private set
-    var history   by mutableStateOf(listOf<HistoryEntry>());  private set
+    var events by mutableStateOf(EventCodec.decode(prefs.getString(KEY_EVENTS, null))); private set
+    var scores by mutableStateOf(Scores.replay(events)); private set
+    var team1Name by mutableStateOf(prefs.getString(KEY_NAME1, null) ?: DEFAULT_NAME1); private set
+    var team2Name by mutableStateOf(prefs.getString(KEY_NAME2, null) ?: DEFAULT_NAME2); private set
+    var goal by mutableStateOf(prefs.getInt(KEY_GOAL, Rules.DEFAULT_GOAL).takeIf { it > 0 }); private set
+    var victoryDismissed by mutableStateOf(prefs.getBoolean(KEY_VICTORY_DISMISSED, false)); private set
 
-    // ── Barres manuelles (tapé sur le tableau) ────────────────────────
-    fun mark(team: Int, zone: Int) {
-        log(HistoryEntry("${teamName(team)} : +${zoneVal(zone)}"))
-        markSilent(team, zone)
+    val winner: Team? get() = Rules.winner(scores, goal)
+
+    fun name(team: Team): String = if (team == Team.ONE) team1Name else team2Name
+
+    // ── Actions ───────────────────────────────────────────────────────
+
+    fun mark(team: Team, zone: Zone) = push(GameEvent.Mark(team, zone))
+
+    fun unmark(team: Team, zone: Zone) {
+        if (scores[team].count(zone) > 0) push(GameEvent.Unmark(team, zone))
     }
 
-    fun unmark(team: Int, zone: Int) {
-        val count = when (zone) { 1 -> score(team).m100; 2 -> score(team).m50; else -> score(team).m20 }
-        if (count > 0) {
-            log(HistoryEntry("${teamName(team)} : -${zoneVal(zone)}"))
-            unmarkSilent(team, zone)
-        }
+    fun addRound(round: GameEvent.Round) = push(round)
+
+    fun addAnnounce(team: Team, points: Int, stoeck: Boolean) =
+        push(GameEvent.Announce(team, points, stoeck))
+
+    fun undo() {
+        if (events.isNotEmpty()) setEvents(events.dropLast(1), Scores.replay(events.dropLast(1)))
     }
 
-    // ── Manche (via dialogue) ─────────────────────────────────────────
-    fun addRound(score1: Int, score2: Int = maxOf(0, 157 - score1), multiplier: Int = 1) {
-        addAsMarks(1, score1.coerceIn(0, 600) * multiplier)
-        addAsMarks(2, score2.coerceIn(0, 600) * multiplier)
-        val mult = if (multiplier == 2) " ×2" else ""
-        log(HistoryEntry("Manche$mult  $team1Name $score1 — $team2Name $score2", isRound = true))
+    /** Efface scores et historique ; conserve noms et objectif. */
+    fun reset() = setEvents(emptyList(), Scores())
+
+    fun rename(team: Team, name: String) {
+        val clean = name.trim().take(MAX_NAME)
+        if (team == Team.ONE) team1Name = clean.ifBlank { DEFAULT_NAME1 }
+        else team2Name = clean.ifBlank { DEFAULT_NAME2 }
+        save()
     }
 
-    // ── Noms ──────────────────────────────────────────────────────────
-    fun setNames(n1: String, n2: String) {
-        team1Name = n1.ifBlank { "Nous" }
-        team2Name = n2.ifBlank { "Eux" }
+    fun changeGoal(newGoal: Int?) {
+        goal = newGoal?.takeIf { it in 1..Rules.MAX_GOAL }
+        syncVictory()
+        save()
     }
 
-    // ── Reset ─────────────────────────────────────────────────────────
-    fun reset() {
-        team1   = TeamScore()
-        team2   = TeamScore()
-        history = listOf()
+    fun dismissVictory() {
+        victoryDismissed = true
+        save()
     }
 
     // ── Internes ──────────────────────────────────────────────────────
 
-    private fun markSilent(team: Int, zone: Int) {
-        if (team == 1) team1 = when (zone) {
-            1    -> team1.copy(m100 = team1.m100 + 1)
-            2    -> team1.copy(m50  = team1.m50  + 1)
-            else -> team1.copy(m20  = team1.m20  + 1)
-        }
-        else team2 = when (zone) {
-            1    -> team2.copy(m100 = team2.m100 + 1)
-            2    -> team2.copy(m50  = team2.m50  + 1)
-            else -> team2.copy(m20  = team2.m20  + 1)
-        }
+    private fun push(event: GameEvent) = setEvents(events + event, scores.apply(event))
+
+    private fun setEvents(list: List<GameEvent>, newScores: Scores) {
+        events = list
+        scores = newScores
+        syncVictory()
+        save()
     }
 
-    private fun unmarkSilent(team: Int, zone: Int) {
-        if (team == 1) team1 = when (zone) {
-            1    -> team1.copy(m100 = maxOf(0, team1.m100 - 1))
-            2    -> team1.copy(m50  = maxOf(0, team1.m50  - 1))
-            else -> team1.copy(m20  = maxOf(0, team1.m20  - 1))
-        }
-        else team2 = when (zone) {
-            1    -> team2.copy(m100 = maxOf(0, team2.m100 - 1))
-            2    -> team2.copy(m50  = maxOf(0, team2.m50  - 1))
-            else -> team2.copy(m20  = maxOf(0, team2.m20  - 1))
-        }
+    /** Le dialogue de victoire réapparaît si plus personne n'a gagné (undo, reset, objectif relevé). */
+    private fun syncVictory() {
+        if (winner == null) victoryDismissed = false
     }
 
-    private fun addAsMarks(team: Int, score: Int) {
-        var rem  = score + score(team).retenue  // carry-over cumulatif
-        val n100 = rem / 100; rem %= 100
-        val n50  = rem / 50;  rem %= 50
-        val n20  = rem / 20;  rem %= 20
-        repeat(n100) { markSilent(team, 1) }
-        repeat(n50)  { markSilent(team, 2) }
-        repeat(n20)  { markSilent(team, 3) }
-        // rem = 0–19 : nouvelle retenue
-        if (team == 1) team1 = team1.copy(retenue = rem)
-        else           team2 = team2.copy(retenue = rem)
+    private fun save() {
+        prefs.edit()
+            .putString(KEY_EVENTS, EventCodec.encode(events))
+            .putString(KEY_NAME1, team1Name)
+            .putString(KEY_NAME2, team2Name)
+            .putInt(KEY_GOAL, goal ?: 0)
+            .putBoolean(KEY_VICTORY_DISMISSED, victoryDismissed)
+            .apply()
     }
 
-    private fun log(entry: HistoryEntry) {
-        history = (listOf(entry) + history).take(100)
+    companion object {
+        const val MAX_NAME = 12
+        private const val DEFAULT_NAME1 = "Nous"
+        private const val DEFAULT_NAME2 = "Eux"
+        private const val KEY_EVENTS = "events"
+        private const val KEY_NAME1 = "name1"
+        private const val KEY_NAME2 = "name2"
+        private const val KEY_GOAL = "goal"
+        private const val KEY_VICTORY_DISMISSED = "victory_dismissed"
     }
-
-    private fun score(team: Int)    = if (team == 1) team1 else team2
-    private fun teamName(team: Int) = if (team == 1) team1Name else team2Name
-    private fun zoneVal(zone: Int)  = when (zone) { 1 -> 100; 2 -> 50; else -> 20 }
 }
