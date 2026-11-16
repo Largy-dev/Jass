@@ -157,9 +157,13 @@ private fun ZSlate(
             drawLine(Slate.Chalk.copy(alpha = 0.85f), a, b, lineWidth, StrokeCap.Round)
         }
         drawZoneLabels(z, measurer)
+        // Éloigner les barres des coins du Z : plus il est plat (paysage), plus la diagonale
+        // reste proche des traits horizontaux, donc plus la marge doit être grande.
+        val slope = (z.right - z.left) / (z.bottom - z.top)
+        val margin = maxOf(MIN_MARGIN.dp.toPx(), TALLY_HALF.dp.toPx() * slope + 20.dp.toPx())
         Zone.entries.forEach { zone ->
             val (a, b) = z.segment(zone)
-            drawTally(a, b, score.count(zone), measurer)
+            drawTally(a, b, score.count(zone), margin, measurer)
         }
     }
 }
@@ -198,27 +202,27 @@ private val labelStyle = TextStyle(color = Slate.Chalk.copy(alpha = 0.18f), font
 private val badgeStyle = TextStyle(color = Slate.Accent, fontFamily = FontFamily.Monospace, fontSize = 13.sp, fontWeight = FontWeight.Bold)
 
 private fun DrawScope.drawZoneLabels(z: ZGeometry, measurer: TextMeasurer) {
-    val gap = 6.dp.toPx()
+    // Placés côté extérieur du Z, là où ni la diagonale ni les premières barres ne passent.
+    val gap = 2.dp.toPx()
     val l100 = measurer.measure("100", labelStyle)
-    drawText(l100, topLeft = Offset(z.right - l100.size.width, z.top + gap))
+    drawText(l100, topLeft = Offset(z.right - l100.size.width, z.top - gap - l100.size.height))
     val l50 = measurer.measure("50", labelStyle)
     drawText(l50, topLeft = Offset(z.left, (z.top + z.bottom) / 2f - l50.size.height / 2f))
     val l20 = measurer.measure("20", labelStyle)
-    drawText(l20, topLeft = Offset(z.left, z.bottom - gap - l20.size.height))
+    drawText(l20, topLeft = Offset(z.right - l20.size.width, z.bottom + gap))
 }
 
 /**
  * Barres de comptage perpendiculaires au trait [a]→[b], par groupes de 5 (4 barres + 1 qui barre).
  * L'espacement se resserre pour tenir ; au-delà, les barres restantes s'affichent en « +N ».
  */
-private fun DrawScope.drawTally(a: Offset, b: Offset, count: Int, measurer: TextMeasurer) {
+private fun DrawScope.drawTally(a: Offset, b: Offset, count: Int, margin: Float, measurer: TextMeasurer) {
     if (count <= 0) return
     val len = hypot(b.x - a.x, b.y - a.y)
     val dir = (b - a) / len
     val normal = Offset(-dir.y, dir.x)
-    val margin = 22.dp.toPx()
     val usable = len - 2 * margin
-    val half = 13.dp.toPx()
+    val half = TALLY_HALF.dp.toPx()
     val stroke = 2.5.dp.toPx()
     val groupUnits = 3f + GROUP_GAP          // largeur d'un groupe + espace, en unités d'espacement
 
@@ -259,3 +263,5 @@ private fun DrawScope.drawTally(a: Offset, b: Offset, count: Int, measurer: Text
 }
 
 private const val GROUP_GAP = 2f
+private const val TALLY_HALF = 13   // demi-longueur d'une barre, en dp
+private const val MIN_MARGIN = 30   // marge aux extrémités d'un trait, en dp

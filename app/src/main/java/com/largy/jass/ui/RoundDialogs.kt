@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -180,6 +181,7 @@ fun AnnounceDialog(
                                 onClick = { onConfirm(team, pts, stoeck) },
                                 border = BorderStroke(1.5.dp, Slate.Line),
                                 shape = RoundedCornerShape(8.dp),
+                                contentPadding = CompactPadding,
                                 modifier = Modifier.weight(1f).height(52.dp),
                             ) {
                                 Text(
@@ -229,8 +231,12 @@ fun ToggleChip(label: String, selected: Boolean, modifier: Modifier = Modifier, 
             contentColor = if (selected) Slate.Accent else Slate.ChalkMuted,
         ),
         shape = RoundedCornerShape(8.dp),
+        contentPadding = CompactPadding,
         modifier = modifier,
     ) {
         Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp, maxLines = 1)
     }
 }
+
+/** Padding réduit : les libellés (« +100 », « Stöck », « Aucun ») tiennent sur un tiers de dialogue. */
+private val CompactPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
