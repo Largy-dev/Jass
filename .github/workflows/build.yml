@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
-      - claude/jass-scoring-app-nFcgU
   workflow_dispatch:
 
 permissions:
@@ -32,6 +30,9 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest --no-daemon
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
@@ -75,11 +76,12 @@ jobs:
             > (Paramètres → Sécurité → Installer des applications inconnues).
 
             ### Fonctionnalités
-            - Score en temps réel pour 2 équipes
-            - Saisie par manche : levées, annonces (Wys), Stöck, match toutes levées
-            - Raccourcis Wys : Séq.3/4/5, Carré, 4 Nells, 4 Buur
-            - Objectif configurable (1000, 2500, 3000 ou perso)
-            - Noms d'équipes personnalisables
+            - Ardoise en Z par équipe : tap = +1 barre, appui long = −1 barre
+            - Saisie de manche avec pavé numérique, Match (257) et pique double ×2
+            - Annonces (Wys 20 à 200) et Stöck
+            - Retenue cumulée entre manches
+            - Objectif configurable (1500 par défaut) avec annonce du vainqueur
+            - Historique, annulation de la dernière action, sauvegarde automatique
           files: release/Jass-Score.apk
           draft: false
           prerelease: false
