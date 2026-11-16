@@ -1,4 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Jass</string>
+    <string name="title">JASS</string>
+
+    <!-- Barre du haut -->
+    <string name="cd_reset">Nouvelle partie</string>
+    <string name="cd_undo">Annuler la dernière action</string>
+    <string name="cd_history">Historique</string>
+    <string name="cd_goal">Objectif de la partie</string>
+    <string name="goal_chip">→ %1$d</string>
+    <string name="goal_chip_none">→ ∞</string>
+
+    <!-- Ardoise -->
+    <string name="retenue">R: %1$d</string>
+    <string name="retenue_none">R: —</string>
+    <string name="slate_description">%1$s : %2$d points. %3$d × 100, %4$d × 50, %5$d × 20, retenue %6$d.</string>
+    <string name="action_add">Ajouter %1$d</string>
+    <string name="action_remove">Retirer %1$d</string>
+    <string name="overflow">+%1$d</string>
+
+    <!-- Barre du bas -->
+    <string name="add_round">+ Manche</string>
+    <string name="add_announce">+ Annonce</string>
+
+    <!-- Commun -->
+    <string name="ok">OK</string>
+    <string name="cancel">Annuler</string>
+    <string name="close">Fermer</string>
+
+    <!-- Manche -->
+    <string name="round_title">Manche</string>
+    <string name="who_counts">Qui compte ?</string>
+    <string name="match">Match</string>
+    <string name="doubled">×2</string>
+    <string name="points_hint">Points (0–157)</string>
+    <string name="preview_line">%1$s : %2$d</string>
+    <string name="key_backspace">Effacer un chiffre</string>
+
+    <!-- Annonce -->
+    <string name="announce_title">Annonce</string>
+    <string name="for_team">Pour quelle équipe ?</string>
+    <string name="stoeck">Stöck</string>
+
+    <!-- Renommer -->
+    <string name="rename_title">Nom de l\'équipe</string>
+
+    <!-- Reset -->
+    <string name="reset_title">Nouvelle partie ?</string>
+    <string name="reset_text">Les scores et l\'historique seront effacés. Les noms et l\'objectif sont conservés.</string>
+    <string name="reset_confirm">Effacer</string>
+
+    <!-- Objectif -->
+    <string name="goal_title">Objectif</string>
+    <string name="goal_none">Aucun</string>
+    <string name="goal_custom">Autre</string>
+
+    <!-- Victoire -->
+    <string name="victory_title">%1$s gagne !</string>
+    <string name="victory_text">%1$s %2$d — %3$s %4$d</string>
+    <string name="new_game">Nouvelle partie</string>
+    <string name="keep_playing">Continuer</string>
+
+    <!-- Historique -->
+    <string name="history_title">Historique</string>
+    <string name="history_empty">Aucune entrée.</string>
+    <string name="history_undo">Annuler la dernière</string>
+    <string name="h_mark">%1$s : +%2$d</string>
+    <string name="h_unmark">%1$s : −%2$d</string>
+    <string name="h_round">Manche%1$s · %2$s %3$d — %4$s %5$d</string>
+    <string name="h_match">Match%1$s · %2$s %3$d</string>
+    <string name="h_announce">%1$s : Wys +%2$d</string>
+    <string name="h_stoeck">%1$s : Stöck +%2$d</string>
+    <string name="h_doubled_suffix">" ×2"</string>
 </resources>
