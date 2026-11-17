@@ -1,4 +1,4 @@
-package com.largy.jass.ui
+package com.jass.largy.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,12 +27,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.largy.jass.GameViewModel
-import com.largy.jass.R
-import com.largy.jass.game.GameEvent
-import com.largy.jass.game.Rules
-import com.largy.jass.game.Team
-import com.largy.jass.ui.theme.Slate
+import com.jass.largy.GameViewModel
+import com.jass.largy.R
+import com.jass.largy.game.GameEvent
+import com.jass.largy.game.Rules
+import com.jass.largy.game.Team
+import com.jass.largy.ui.theme.Slate
 
 @Composable
 fun RenameDialog(current: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {

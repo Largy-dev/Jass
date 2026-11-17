@@ -1,4 +1,4 @@
-package com.largy.jass.game
+package com.jass.largy.game
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

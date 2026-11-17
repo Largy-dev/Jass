@@ -1,4 +1,4 @@
-package com.largy.jass.ui
+package com.jass.largy.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -38,10 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.largy.jass.GameViewModel
-import com.largy.jass.R
-import com.largy.jass.game.Team
-import com.largy.jass.ui.theme.Slate
+import com.jass.largy.GameViewModel
+import com.jass.largy.R
+import com.jass.largy.game.Team
+import com.jass.largy.ui.theme.Slate
 
 private enum class DialogKind { NONE, ROUND, ANNOUNCE, HISTORY, RESET, GOAL, RENAME_1, RENAME_2 }
 

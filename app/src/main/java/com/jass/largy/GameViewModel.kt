@@ -1,4 +1,4 @@
-package com.largy.jass
+package com.jass.largy
 
 import android.app.Application
 import android.content.Context
@@ -6,12 +6,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import com.largy.jass.game.EventCodec
-import com.largy.jass.game.GameEvent
-import com.largy.jass.game.Rules
-import com.largy.jass.game.Scores
-import com.largy.jass.game.Team
-import com.largy.jass.game.Zone
+import com.jass.largy.game.EventCodec
+import com.jass.largy.game.GameEvent
+import com.jass.largy.game.Rules
+import com.jass.largy.game.Scores
+import com.jass.largy.game.Team
+import com.jass.largy.game.Zone
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
 

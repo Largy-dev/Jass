@@ -19,11 +19,10 @@ val signingProps: Properties? = (System.getenv("JASS_SIGNING_PROPERTIES")
 val ciVersionCode: Int? = System.getenv("VERSION_CODE")?.toIntOrNull()
 
 android {
-    namespace = "com.largy.jass"
+    namespace = "com.jass.largy"
     compileSdk = 36
 
     defaultConfig {
-        // Nom de package imposé par la fiche Play Console (le namespace du code reste com.largy.jass)
         applicationId = "com.jass.largy"
         minSdk = 26
         targetSdk = 36

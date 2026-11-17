@@ -1,4 +1,4 @@
-package com.largy.jass.game
+package com.jass.largy.game
 
 /** Équipe. [number] est le numéro affiché sur l'ardoise. */
 enum class Team(val number: Int) {

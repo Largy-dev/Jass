@@ -1,4 +1,4 @@
-package com.largy.jass.game
+package com.jass.largy.game
 
 /**
  * Sérialisation texte des événements (une ligne par événement), pour la sauvegarde locale.

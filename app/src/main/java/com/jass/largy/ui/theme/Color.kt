@@ -1,4 +1,4 @@
-package com.largy.jass.ui.theme
+package com.jass.largy.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

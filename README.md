@@ -44,7 +44,7 @@ La partie est sauvegardée automatiquement à chaque action. En paysage, les deu
 Kotlin + Jetpack Compose (Material 3), sans autre dépendance.
 
 ```
-app/src/main/java/com/largy/jass/
+app/src/main/java/com/jass/largy/
 ├── game/              Logique pure, sans Android (testée)
 │   ├── Game.kt          Team, Zone, TeamScore, GameEvent, Scores, Rules
 │   └── EventCodec.kt    Sérialisation texte pour la sauvegarde

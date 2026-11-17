@@ -1,4 +1,4 @@
-package com.largy.jass.ui
+package com.jass.largy.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -42,10 +42,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.largy.jass.R
-import com.largy.jass.game.TeamScore
-import com.largy.jass.game.Zone
-import com.largy.jass.ui.theme.Slate
+import com.jass.largy.R
+import com.jass.largy.game.TeamScore
+import com.jass.largy.game.Zone
+import com.jass.largy.ui.theme.Slate
 import kotlin.math.floor
 import kotlin.math.hypot
 
