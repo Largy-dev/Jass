@@ -20,13 +20,13 @@ val ciVersionCode: Int? = System.getenv("VERSION_CODE")?.toIntOrNull()
 
 android {
     namespace = "com.largy.jass"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         // Nom de package imposé par la fiche Play Console (le namespace du code reste com.largy.jass)
         applicationId = "com.jass.largy"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = ciVersionCode ?: 2
         versionName = "2.0.${ciVersionCode ?: 0}"
     }

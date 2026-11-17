@@ -62,7 +62,7 @@ L'état de la partie est une **liste d'événements** (barre ajoutée/retirée, 
 
 ### Compiler et tester
 
-Prérequis : JDK 17 et SDK Android 35 (ou Android Studio).
+Prérequis : JDK 17 et SDK Android 36 (ou Android Studio).
 
 ```bash
 ./gradlew testDebugUnitTest   # tests unitaires de la logique de jeu
