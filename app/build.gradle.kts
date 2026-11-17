@@ -23,7 +23,8 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.largy.jass"
+        // Nom de package imposé par la fiche Play Console (le namespace du code reste com.largy.jass)
+        applicationId = "com.jass.largy"
         minSdk = 26
         targetSdk = 35
         versionCode = ciVersionCode ?: 2
